@@ -1,0 +1,24 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+  install)
+    adduser --system --no-create-home --group phpr
+    adduser --system phpr
+    mkdir /run/phpr
+    chown phpr:phpr /run/phpr
+    ;;
+
+  upgrade)
+    ;;
+
+  abort-upgrade)
+    ;;
+
+  *)
+    echo "preinst called with unknown argument \`$1'" >&2
+    exit 1
+    ;;
+esac
+
+exit 0
