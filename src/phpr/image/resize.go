@@ -2,6 +2,7 @@ package image
 
 import (
 	"github.com/rainycape/magick"
+	"math"
 )
 
 func Resize(img *magick.Image, newWidth, newHeight int, bestfit bool) *magick.Image {
@@ -21,14 +22,14 @@ func Resize(img *magick.Image, newWidth, newHeight int, bestfit bool) *magick.Im
 			panic(err)
 		}
 	} else {
-		if newRatio > 1 {
+		if oldRatio > newRatio {
 			// Ширина больше
-			tmpHeight = newHeight
-			tmpWidth = int(float64(newHeight) * oldRatio)
-		} else {
-			// Высота больше
 			tmpWidth = newWidth
 			tmpHeight = int(float64(newWidth) / oldRatio)
+		} else {
+			// Высота больше
+			tmpHeight = newHeight
+			tmpWidth = int(float64(newHeight) * oldRatio)
 		}
 
 		img, err = img.Sample(tmpWidth, tmpHeight)
@@ -37,9 +38,15 @@ func Resize(img *magick.Image, newWidth, newHeight int, bestfit bool) *magick.Im
 			panic(err)
 		}
 
+		borderWidth := float64((newWidth - img.Width()) / 2)
+		borderHeight := float64((newHeight - img.Height()) / 2)
+
+		borderWidth = math.Max(0.0, borderWidth)
+		borderHeight = math.Max(0.0, borderHeight)
+
 		rect := magick.Rect{
-			Width:  uint((newWidth - img.Width()) / 2),
-			Height: uint((newHeight - img.Height()) / 2),
+			Width:  uint(borderWidth),
+			Height: uint(borderHeight),
 			X:      0,
 			Y:      0,
 		}
