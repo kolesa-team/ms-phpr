@@ -1,6 +1,7 @@
 package image
 
 import (
+	"../helper"
 	"github.com/rainycape/magick"
 	"math"
 )
@@ -17,10 +18,7 @@ func Resize(img *magick.Image, newWidth, newHeight int, bestfit bool) *magick.Im
 
 	if bestfit {
 		img, err = img.CropResize(newWidth, newHeight, magick.FQuadratic, magick.CSCenter)
-
-		if err != nil {
-			panic(err)
-		}
+		helper.CheckError(err)
 	} else {
 		if oldRatio > newRatio {
 			// Ширина больше
@@ -33,10 +31,7 @@ func Resize(img *magick.Image, newWidth, newHeight int, bestfit bool) *magick.Im
 		}
 
 		img, err = img.Sample(tmpWidth, tmpHeight)
-
-		if err != nil {
-			panic(err)
-		}
+		helper.CheckError(err)
 
 		borderWidth := float64((newWidth - img.Width()) / 2)
 		borderHeight := float64((newHeight - img.Height()) / 2)
@@ -52,11 +47,7 @@ func Resize(img *magick.Image, newWidth, newHeight int, bestfit bool) *magick.Im
 		}
 
 		img, err = img.AddBorder(rect, getBgColor())
-
-		if err != nil {
-			panic(err)
-		}
-
+		helper.CheckError(err)
 	}
 
 	return img
