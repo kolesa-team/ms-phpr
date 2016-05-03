@@ -6,24 +6,30 @@ Go PHoto PRocessor
  * sudo apt-get install libmagickcore5
  * sudo apt-get install libgif4
 
-*Input parameters:*
+**Input parameters:**
+
  * size (NxM) — for resize
  * bestfit (0|1) — for best fit cropping
  * watermark (0|1) — add watermark
 
-*Configuration*
+**Configuration**
+
 [http]
+
  * addr = :8185 # where to bind server
  * keep_alive = 300 # keep alive timeout
  * access_log = false # disable access log
 
 [proxy]
+
  * url = http://strg.kolesa.kz/ # where to find images
 
 [image]
+
  * background = 255,255,255 # background color for non-bestfit cropping
 
 [watermark]
+
  * color_threshold = 127,127,127 # threshold for choosing black/white watermark image
  * file_black_big = watermark-b-b.png # filename for black big watermark
  * file_black_small = watermark-w-s.png # filename for black small watermark
