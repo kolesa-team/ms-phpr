@@ -1,8 +1,14 @@
 Go PHoto PRocessor
 ==================
 
+**Dependencies**
+*For make*
+
  * sudo apt-get install libgif-dev
  * sudo apt-get install libmagickwand-dev
+
+*For use*
+
  * sudo apt-get install libmagickcore5
  * sudo apt-get install libgif4
 
