@@ -2,6 +2,7 @@ Go PHoto PRocessor
 ==================
 
 **Dependencies**
+
 *For make*
 
  * sudo apt-get install libgif-dev
