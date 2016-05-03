@@ -3,6 +3,7 @@ export GOPATH=$(CURDIR)/.go
 APP_NAME = phpr
 DEBIAN_TMP = $(CURDIR)/deb
 VERSION = `$(CURDIR)/out/$(APP_NAME) -v | cut -d ' ' -f 3`
+CGO_ENABLED = 0
 
 $(CURDIR)/out/$(APP_NAME): $(CURDIR)/src/main.go
 	go build -o $(CURDIR)/out/$(APP_NAME) $(CURDIR)/src/main.go
