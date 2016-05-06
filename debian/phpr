@@ -22,7 +22,7 @@ test -x $DAEMON || exit 0
 
 case "$1" in
     start)
-        if start-stop-daemon --start --quiet --chuid phpr:phpr --exec $DAEMON -- $ARGS
+        if start-stop-daemon --start --quiet --chuid phpr:phpr --make-pidfile --exec $DAEMON -- $ARGS
         then
             echo "$NAME started."
         else
@@ -30,7 +30,7 @@ case "$1" in
         fi
         ;;
     stop)
-        if start-stop-daemon --stop --retry forever/TERM/1 --quiet --oknodo --pidfile $PIDFILE --exec $DAEMON
+        if start-stop-daemon --stop --retry forever/TERM/1 --quiet --make-pidfile --oknodo --pidfile $PIDFILE --exec $DAEMON
         then
             echo "$NAME stopped."
         else
