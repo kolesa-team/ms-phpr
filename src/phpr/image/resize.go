@@ -1,9 +1,10 @@
 package image
 
 import (
+	"math"
+
 	"../helper"
 	"github.com/rainycape/magick"
-	"math"
 )
 
 func Resize(img *magick.Image, newWidth, newHeight int, bestfit bool) *magick.Image {
@@ -17,7 +18,7 @@ func Resize(img *magick.Image, newWidth, newHeight int, bestfit bool) *magick.Im
 	)
 
 	if bestfit {
-		img, err = img.CropResize(newWidth, newHeight, magick.FQuadratic, magick.CSCenter)
+		img, err = img.CropResize(newWidth, newHeight, magick.FSinc, magick.CSCenter)
 		helper.CheckError(err)
 	} else {
 		if oldRatio > newRatio {
