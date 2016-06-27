@@ -1,13 +1,14 @@
 package image
 
 import (
+	"io"
+	"strconv"
+	"strings"
+
 	"../helper"
 	"github.com/endeveit/go-snippets/cli"
 	"github.com/endeveit/go-snippets/config"
 	"github.com/rainycape/magick"
-	"io"
-	"strconv"
-	"strings"
 )
 
 func FromReader(r io.Reader) *magick.Image {
@@ -20,6 +21,7 @@ func FromReader(r io.Reader) *magick.Image {
 func ToWriter(image *magick.Image, w io.Writer) error {
 	info := magick.NewInfo()
 	info.SetFormat(image.Format())
+	defer image.Deconstruct()
 
 	return image.Encode(w, info)
 }

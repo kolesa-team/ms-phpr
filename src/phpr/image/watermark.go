@@ -1,12 +1,13 @@
 package image
 
 import (
-	"../helper"
 	"fmt"
-	"github.com/endeveit/go-snippets/config"
-	"github.com/rainycape/magick"
 	"math/rand"
 	"sync"
+
+	"../helper"
+	"github.com/endeveit/go-snippets/config"
+	"github.com/rainycape/magick"
 )
 
 var (
@@ -18,7 +19,7 @@ var (
 	watermarkPath                                                        string
 	fileBlackBig, fileBlackSmall, fileWhiteBig, fileWhiteSmall, filename string
 	once                                                                 sync.Once
-	watermark                                                            *magick.Image
+	watermarks                                                           map[string]*magick.Image
 )
 
 const (
@@ -69,10 +70,9 @@ func Watermark(image *magick.Image) *magick.Image {
 		break
 	}
 
-	watermark, err = magick.DecodeFile(fmt.Sprintf("%s%s", watermarkPath, filename))
-	helper.CheckError(err)
-
-	image.Composite(magick.CompositeAtop, watermark, watermarkSize.X, watermarkSize.Y)
+	if wm, exists := watermarks[filename]; exists {
+		image.Composite(magick.CompositeAtop, wm, watermarkSize.X, watermarkSize.Y)
+	}
 
 	return image
 }
@@ -117,7 +117,10 @@ func pickSize(image *magick.Image) (result magick.Rect) {
 
 func initConfig() {
 	once.Do(func() {
-		var w, h uint64
+		var (
+			w, h      uint64
+			watermark *magick.Image
+		)
 
 		watermarkPath, err = config.Instance().String("watermark", "path")
 		helper.CheckError(err)
@@ -159,6 +162,14 @@ func initConfig() {
 			Green:   g,
 			Blue:    b,
 			Opacity: uint8(255),
+		}
+
+		watermarks = make(map[string]*magick.Image)
+		for _, filename := range []string{fileWhiteBig, fileWhiteSmall, fileBlackBig, fileBlackSmall} {
+			watermark, err = magick.DecodeFile(fmt.Sprintf("%s%s", watermarkPath, filename))
+			helper.CheckError(err)
+
+			watermarks[filename] = watermark
 		}
 	})
 }
