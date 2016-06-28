@@ -99,6 +99,8 @@ func pickColor(image *magick.Image, rect magick.Rect) (color string) {
 		color = "b"
 	}
 
+	sImage.Deconstruct()
+
 	return
 }
 
@@ -168,5 +170,7 @@ func initConfig() {
 
 			watermarks[filename] = watermark
 		}
+
+		watermark.Deconstruct()
 	})
 }

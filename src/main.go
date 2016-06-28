@@ -26,7 +26,7 @@ func main() {
 
 	app.Name = "phpr"
 	app.Usage = "Photo proxy with resizing and watermarks"
-	app.Version = "0.0.5"
+	app.Version = "0.0.6"
 	app.Author = "Igor Borodikhin"
 	app.Email = "iborodikhin@gmail.com"
 	app.Action = actionRun
@@ -50,7 +50,7 @@ func main() {
 	app.Run(os.Args)
 }
 
-func actionRun(c *cli.Context) {
+func actionRun(c *cli.Context) error {
 	isDaemon := c.Bool("daemon")
 	cnf := config.Instance(c.String("config"))
 	pidfile := c.String("pid")
@@ -88,7 +88,7 @@ func actionRun(c *cli.Context) {
 		}
 
 		if child != nil {
-			return
+			return err
 		}
 
 		defer dmn.Release()
@@ -109,8 +109,12 @@ func actionRun(c *cli.Context) {
 			logger.Instance().WithFields(log.Fields{
 				"error": err,
 			}).Error("An error occured while serving signals")
+
+			return err
 		}
 	}
+
+	return nil
 }
 
 // Запуск сервера
