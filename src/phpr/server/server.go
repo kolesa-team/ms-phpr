@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"../image"
 	"github.com/endeveit/go-snippets/cli"
@@ -25,6 +26,7 @@ type QueryData struct {
 var (
 	enableAccessLog bool = false
 	proxyPrefix     string
+	proxyTimeout    int
 	once            sync.Once
 )
 
@@ -40,6 +42,10 @@ func initServer() {
 
 		proxyPrefix, err = config.Instance().String("proxy", "url")
 		cli.CheckFatalError(err)
+
+		if proxyTimeout, err = config.Instance().Int("proxy", "timeout"); err != nil {
+			proxyTimeout = 1000
+		}
 	})
 }
 
@@ -64,30 +70,40 @@ func NewMux() *web.Mux {
 func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 	var (
 		res *http.Response
+		err error
 	)
 
 	_ = r.ParseForm()
 	query := parseQuery(r.Form)
 	url := c.URLParams["$1"]
 
-	res, _ = http.Get(proxyPrefix + url)
+	client := http.Client{
+		Timeout: time.Duration(time.Duration(proxyTimeout) * time.Millisecond),
+	}
 
-	defer res.Body.Close()
-
-	if res.StatusCode == 200 {
-		img := image.FromReader(res.Body)
-
-		if query.Width > 0 && query.Height > 0 {
-			img = image.Resize(img, query.Width, query.Height, query.IsBestfit)
-		}
-
-		if query.IsWatermark {
-			img = image.Watermark(img)
-		}
-
-		image.ToWriter(img, w)
+	if res, err = client.Get(proxyPrefix + url); err != nil {
+		http.Error(w, "504 Gateway Timeout", 504)
 	} else {
-		http.Error(w, res.Status, res.StatusCode)
+		defer res.Body.Close()
+
+		if res.StatusCode == 200 {
+			img, err := image.FromReader(res.Body)
+			if err == nil {
+				if query.Width > 0 && query.Height > 0 {
+					img = image.Resize(img, query.Width, query.Height, query.IsBestfit)
+				}
+
+				if query.IsWatermark {
+					img = image.Watermark(img)
+				}
+
+				image.ToWriter(img, w)
+			} else {
+				http.Error(w, "502 Bad Gateway", 502)
+			}
+		} else {
+			http.Error(w, res.Status, res.StatusCode)
+		}
 	}
 }
 

@@ -11,19 +11,18 @@ import (
 	"github.com/rainycape/magick"
 )
 
-func FromReader(r io.Reader) *magick.Image {
-	image, err := magick.Decode(r)
-	helper.CheckError(err)
-
-	return image
+func FromReader(r io.Reader) (*magick.Image, error) {
+	return magick.Decode(r)
 }
 
 func ToWriter(image *magick.Image, w io.Writer) error {
 	info := magick.NewInfo()
 	info.SetFormat(image.Format())
-	defer image.Deconstruct()
 
-	return image.Encode(w, info)
+	result := image.Encode(w, info)
+	image.Deconstruct()
+
+	return result
 }
 
 func getBgColor() *magick.Pixel {

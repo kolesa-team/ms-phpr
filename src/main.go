@@ -1,6 +1,11 @@
 package main
 
 import (
+	"net/http"
+	"os"
+	"syscall"
+	"time"
+
 	"./phpr/logger"
 	"./phpr/server"
 	log "github.com/Sirupsen/logrus"
@@ -9,10 +14,6 @@ import (
 	hcli "github.com/endeveit/go-snippets/cli"
 	"github.com/endeveit/go-snippets/config"
 	gd "github.com/sevlyar/go-daemon"
-	"net/http"
-	"os"
-	"syscall"
-	"time"
 )
 
 var (
@@ -25,7 +26,7 @@ func main() {
 
 	app.Name = "phpr"
 	app.Usage = "Photo proxy with resizing and watermarks"
-	app.Version = "0.0.1"
+	app.Version = "0.0.5"
 	app.Author = "Igor Borodikhin"
 	app.Email = "iborodikhin@gmail.com"
 	app.Action = actionRun

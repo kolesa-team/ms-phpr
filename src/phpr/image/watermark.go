@@ -86,10 +86,7 @@ func pickColor(image *magick.Image, rect magick.Rect) (color string) {
 
 	color = "w"
 
-	sImage, err = image.Clone()
-	helper.CheckError(err)
-
-	sImage, err = sImage.Crop(rect)
+	sImage, err = image.Crop(rect)
 	helper.CheckError(err)
 
 	sImage, err = sImage.Sample(1, 1)
