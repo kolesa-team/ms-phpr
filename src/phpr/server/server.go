@@ -1,17 +1,18 @@
 package server
 
 import (
-	"../image"
-	"github.com/endeveit/go-snippets/cli"
-	"github.com/endeveit/go-snippets/config"
-	"github.com/zenazn/goji/web"
-	"github.com/zenazn/goji/web/middleware"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
+
+	"../image"
+	"github.com/endeveit/go-snippets/cli"
+	"github.com/endeveit/go-snippets/config"
+	"github.com/zenazn/goji/web"
+	"github.com/zenazn/goji/web/middleware"
 )
 
 type QueryData struct {
@@ -61,24 +62,33 @@ func NewMux() *web.Mux {
 }
 
 func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
+	var (
+		res *http.Response
+	)
+
 	_ = r.ParseForm()
 	query := parseQuery(r.Form)
 	url := c.URLParams["$1"]
-	res, _ := http.Get(proxyPrefix + url)
+
+	res, _ = http.Get(proxyPrefix + url)
 
 	defer res.Body.Close()
 
-	img := image.FromReader(res.Body)
+	if res.StatusCode == 200 {
+		img := image.FromReader(res.Body)
 
-	if query.Width > 0 && query.Height > 0 {
-		img = image.Resize(img, query.Width, query.Height, query.IsBestfit)
+		if query.Width > 0 && query.Height > 0 {
+			img = image.Resize(img, query.Width, query.Height, query.IsBestfit)
+		}
+
+		if query.IsWatermark {
+			img = image.Watermark(img)
+		}
+
+		image.ToWriter(img, w)
+	} else {
+		http.Error(w, res.Status, res.StatusCode)
 	}
-
-	if query.IsWatermark {
-		img = image.Watermark(img)
-	}
-
-	image.ToWriter(img, w)
 }
 
 func parseQuery(query url.Values) QueryData {
