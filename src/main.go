@@ -26,7 +26,7 @@ func main() {
 
 	app.Name = "phpr"
 	app.Usage = "Photo proxy with resizing and watermarks"
-	app.Version = "0.0.6"
+	app.Version = "0.0.7"
 	app.Author = "Igor Borodikhin"
 	app.Email = "iborodikhin@gmail.com"
 	app.Action = actionRun

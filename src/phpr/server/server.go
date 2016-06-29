@@ -87,6 +87,10 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 		defer res.Body.Close()
 
 		if res.StatusCode == 200 {
+			for key, _ := range res.Header {
+				w.Header().Add(key, res.Header.Get(key))
+			}
+
 			img, err := image.FromReader(res.Body)
 			if err == nil {
 				if query.Width > 0 && query.Height > 0 {
