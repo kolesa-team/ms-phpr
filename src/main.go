@@ -35,6 +35,10 @@ func main() {
 			Name:  "daemon, d",
 			Usage: "If provided, the service will be launched as daemon",
 		},
+		cli.BoolFlag{
+			Name:  "debug, b",
+			Usage: "If provided, the service will be launched in debug mode",
+		},
 		cli.StringFlag{
 			Name:  "config, c",
 			Value: "/etc/aps/config.cfg",
@@ -63,7 +67,7 @@ func actionRun(c *cli.Context) error {
 
 	server := manners.NewWithServer(&http.Server{
 		Addr:        addr,
-		Handler:     server.NewMux(),
+		Handler:     server.NewMux(c.Bool("debug")),
 		ReadTimeout: time.Duration(keepAlive) * time.Second,
 	})
 	server.SetKeepAlivesEnabled(true)

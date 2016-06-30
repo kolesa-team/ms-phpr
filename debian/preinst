@@ -4,9 +4,7 @@ set -e
 case "$1" in
   install)
     adduser --system --home /opt/ms-phpr/ --group phpr
-    mkdir /opt/ms-phpr/
-    mkdir /run/phpr
-    chown -R phpr: /opt/ms-phpr/
+    mkdir -p /run/phpr/data
     chown -R phpr: /run/phpr
     ;;
 

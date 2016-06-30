@@ -16,6 +16,7 @@ case "$1" in
 
   purge)
     deluser phpr
+	rm -rf /run/phpr
     ;;
 
   remove|failed-upgrade|abort-install|abort-upgrade|disappear)

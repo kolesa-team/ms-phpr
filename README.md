@@ -23,7 +23,7 @@ Go PHoto PRocessor
 
 [http]
 
- * addr = :8185 # where to bind server
+ * addr = :8187 # where to bind server
  * keep_alive = 300 # keep alive timeout
  * access_log = false # disable access log
 
