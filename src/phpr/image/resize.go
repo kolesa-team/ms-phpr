@@ -3,7 +3,9 @@ package image
 import (
 	"math"
 
-	"../helper"
+	"../logger"
+
+	log "github.com/Sirupsen/logrus"
 	"github.com/rainycape/magick"
 )
 
@@ -18,8 +20,11 @@ func Resize(img *magick.Image, newWidth, newHeight int, bestfit bool) *magick.Im
 	)
 
 	if bestfit {
-		img, err = img.CropResize(newWidth, newHeight, magick.FSinc, magick.CSCenter)
-		helper.CheckError(err)
+		if img, err = img.CropResize(newWidth, newHeight, magick.FSinc, magick.CSCenter); err != nil {
+			logger.Instance().WithFields(log.Fields{
+				"error": err,
+			}).Info("Resize failed")
+		}
 	} else {
 		if oldRatio > newRatio {
 			// Ширина больше
@@ -31,8 +36,11 @@ func Resize(img *magick.Image, newWidth, newHeight int, bestfit bool) *magick.Im
 			tmpWidth = int(float64(newHeight) * oldRatio)
 		}
 
-		img, err = img.Sample(tmpWidth, tmpHeight)
-		helper.CheckError(err)
+		if img, err = img.Sample(tmpWidth, tmpHeight); err != nil {
+			logger.Instance().WithFields(log.Fields{
+				"error": err,
+			}).Info("Resample failed")
+		}
 
 		borderWidth := float64((newWidth - img.Width()) / 2)
 		borderHeight := float64((newHeight - img.Height()) / 2)
@@ -47,8 +55,11 @@ func Resize(img *magick.Image, newWidth, newHeight int, bestfit bool) *magick.Im
 			Y:      0,
 		}
 
-		img, err = img.AddBorder(rect, getBgColor())
-		helper.CheckError(err)
+		if img, err = img.AddBorder(rect, getBgColor()); err != nil {
+			logger.Instance().WithFields(log.Fields{
+				"error": err,
+			}).Info("Add border failed")
+		}
 	}
 
 	return img

@@ -6,6 +6,9 @@ import (
 	"sync"
 
 	"../helper"
+	"../logger"
+
+	log "github.com/Sirupsen/logrus"
 	"github.com/endeveit/go-snippets/config"
 	"github.com/rainycape/magick"
 )
@@ -86,20 +89,35 @@ func pickColor(image *magick.Image, rect magick.Rect) (color string) {
 
 	color = "w"
 
-	sImage, err = image.Crop(rect)
-	helper.CheckError(err)
+	if sImage, err = image.Crop(rect); err != nil {
+		logger.Instance().WithFields(log.Fields{
+			"error": err,
+		}).Info("Crop failed")
+	}
 
-	sImage, err = sImage.Sample(1, 1)
-	helper.CheckError(err)
+	if sImage, err = sImage.Sample(1, 1); err != nil {
+		logger.Instance().WithFields(log.Fields{
+			"error": err,
+		}).Info("Sample to 1x1 failed")
+	}
 
-	pixel, err = sImage.Pixel(0, 0)
-	helper.CheckError(err)
+	if pixel, err = sImage.Pixel(0, 0); err != nil {
+		logger.Instance().WithFields(log.Fields{
+			"error": err,
+		}).Info("Get color for 1x1 failed")
+	}
 
 	if pixel.Red > colorThreshold.Red && pixel.Green > colorThreshold.Green && pixel.Blue > colorThreshold.Blue {
 		color = "b"
 	}
 
-	sImage.Deconstruct()
+	if sImage, err = sImage.Deconstruct(); err == nil {
+		sImage.Dispose()
+	} else {
+		logger.Instance().WithFields(log.Fields{
+			"error": err,
+		}).Info("Dispose image error")
+	}
 
 	return
 }

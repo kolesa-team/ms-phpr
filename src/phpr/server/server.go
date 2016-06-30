@@ -4,16 +4,16 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"../image"
+	"../logger"
 
-	"../phpr/logger"
 	log "github.com/Sirupsen/logrus"
-
 	"github.com/endeveit/go-snippets/cli"
 	"github.com/endeveit/go-snippets/config"
 	"github.com/zenazn/goji/web"
@@ -33,6 +33,7 @@ var (
 	proxyPrefix     string
 	proxyTimeout    int
 	once            sync.Once
+	client          http.Client
 )
 
 // Инициализация ключей
@@ -52,7 +53,7 @@ func initServer() {
 			proxyTimeout = 1000
 		}
 
-		client := http.Client{
+		client = http.Client{
 			Timeout: time.Duration(time.Duration(proxyTimeout) * time.Millisecond),
 		}
 	})
@@ -91,6 +92,12 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 		logger.Instance().WithFields(log.Fields{
 			"url": proxyPrefix + url,
 		}).Info("Request remote file")
+
+		logger.Instance().WithFields(log.Fields{
+			"NumCPU":       runtime.NumCPU(),
+			"NumCgoCall":   runtime.NumCgoCall(),
+			"NumGoRoutine": runtime.NumGoroutine(),
+		}).Info("System stats")
 	}
 
 	if res, err = client.Get(proxyPrefix + url); err != nil {
@@ -112,6 +119,7 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 
 			img, err := image.FromReader(res.Body)
 			if err == nil {
+
 				if query.Width > 0 && query.Height > 0 {
 					img = image.Resize(img, query.Width, query.Height, query.IsBestfit)
 				}
@@ -120,7 +128,19 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 					img = image.Watermark(img)
 				}
 
-				image.ToWriter(img, w)
+				if err := image.ToWriter(img, w); err != nil {
+					logger.Instance().WithFields(log.Fields{
+						"error": err,
+					}).Error("Error encoding image")
+				}
+
+				if img, err := img.Deconstruct(); err == nil {
+					img.Dispose()
+				} else {
+					logger.Instance().WithFields(log.Fields{
+						"error": err,
+					}).Info("Dispose image error")
+				}
 			} else {
 				if debugMode {
 					logger.Instance().WithFields(log.Fields{

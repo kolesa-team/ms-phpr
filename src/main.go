@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"os"
+	"runtime"
 	"syscall"
 	"time"
 
@@ -26,7 +27,7 @@ func main() {
 
 	app.Name = "phpr"
 	app.Usage = "Photo proxy with resizing and watermarks"
-	app.Version = "0.0.7"
+	app.Version = "0.0.8"
 	app.Author = "Igor Borodikhin"
 	app.Email = "iborodikhin@gmail.com"
 	app.Action = actionRun
@@ -49,6 +50,11 @@ func main() {
 			Value: "/var/run/aps.pid",
 			Usage: "Path to the file where PID will be stored",
 		},
+		cli.IntFlag{
+			Name:  "maxprocs, m",
+			Value: runtime.NumCPU(),
+			Usage: "Max goroutines number",
+		},
 	}
 
 	app.Run(os.Args)
@@ -58,6 +64,7 @@ func actionRun(c *cli.Context) error {
 	isDaemon := c.Bool("daemon")
 	cnf := config.Instance(c.String("config"))
 	pidfile := c.String("pid")
+	runtime.GOMAXPROCS(c.Int("maxprocs"))
 
 	addr, err := cnf.String("http", "addr")
 	hcli.CheckError(err)

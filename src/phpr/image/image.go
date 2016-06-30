@@ -19,10 +19,7 @@ func ToWriter(image *magick.Image, w io.Writer) error {
 	info := magick.NewInfo()
 	info.SetFormat(image.Format())
 
-	result := image.Encode(w, info)
-	image.Deconstruct()
-
-	return result
+	return image.Encode(w, info)
 }
 
 func getBgColor() *magick.Pixel {
