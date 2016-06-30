@@ -39,7 +39,7 @@ Go PHoto PRocessor
 
  * color_threshold = 127,127,127 # threshold for choosing black/white watermark image
  * file_black_big = watermark-b-b.png # filename for black big watermark
- * file_black_small = watermark-w-s.png # filename for black small watermark
+ * file_black_small = watermark-b-s.png # filename for black small watermark
  * file_white_big = watermark-w-b.png # filename for white big watermark
  * file_white_small = watermark-w-s.png # filename for white small watermark
  * margin = 20 # margin for watermark in pixels

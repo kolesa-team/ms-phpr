@@ -34,6 +34,8 @@ var (
 	proxyTimeout    int
 	once            sync.Once
 	client          http.Client
+	nbRequests      int = 0
+	maxRequests     int
 )
 
 // Инициализация ключей
@@ -51,6 +53,10 @@ func initServer() {
 
 		if proxyTimeout, err = config.Instance().Int("proxy", "timeout"); err != nil {
 			proxyTimeout = 1000
+		}
+
+		if maxRequests, err = config.Instance().Int("proxy", "max_requests"); err != nil {
+			maxRequests = 1000
 		}
 
 		client = http.Client{
@@ -119,7 +125,6 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 
 			img, err := image.FromReader(res.Body)
 			if err == nil {
-
 				if query.Width > 0 && query.Height > 0 {
 					img = image.Resize(img, query.Width, query.Height, query.IsBestfit)
 				}
@@ -132,6 +137,10 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 					logger.Instance().WithFields(log.Fields{
 						"error": err,
 					}).Error("Error encoding image")
+				}
+
+				if nbRequests++; nbRequests >= maxRequests {
+					runtime.GC()
 				}
 
 				if img, err := img.Deconstruct(); err == nil {
