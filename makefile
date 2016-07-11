@@ -25,6 +25,9 @@ fmt:
 
 run:
 	go run $(CURDIR)/src/main.go -c=$(CURDIR)/data/config.cfg
+	
+run-dev:
+	go run $(CURDIR)/src/main.go -c=$(CURDIR)/data/config-dev.cfg
 
 strip: $(CURDIR)/out/$(APP_NAME)
 	strip $(CURDIR)/out/$(APP_NAME)
