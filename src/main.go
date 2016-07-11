@@ -27,7 +27,7 @@ func main() {
 
 	app.Name = "phpr"
 	app.Usage = "Photo proxy with resizing and watermarks"
-	app.Version = "0.0.8"
+	app.Version = "0.1.0"
 	app.Author = "Igor Borodikhin"
 	app.Email = "iborodikhin@gmail.com"
 	app.Action = actionRun
@@ -42,12 +42,12 @@ func main() {
 		},
 		cli.StringFlag{
 			Name:  "config, c",
-			Value: "/etc/aps/config.cfg",
+			Value: "/etc/phpr/config.cfg",
 			Usage: "Path to the configuration file",
 		},
 		cli.StringFlag{
 			Name:  "pid, p",
-			Value: "/var/run/aps.pid",
+			Value: "/var/run/phpr.pid",
 			Usage: "Path to the file where PID will be stored",
 		},
 		cli.IntFlag{
@@ -73,9 +73,10 @@ func actionRun(c *cli.Context) error {
 	hcli.CheckError(err)
 
 	server := manners.NewWithServer(&http.Server{
-		Addr:        addr,
-		Handler:     server.NewMux(c.Bool("debug")),
-		ReadTimeout: time.Duration(keepAlive) * time.Second,
+		Addr:         addr,
+		Handler:      server.NewMux(c.Bool("debug")),
+		ReadTimeout:  time.Duration(keepAlive) * time.Second,
+		WriteTimeout: time.Duration(keepAlive) * time.Second,
 	})
 	server.SetKeepAlivesEnabled(true)
 

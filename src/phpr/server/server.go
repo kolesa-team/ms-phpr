@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -98,12 +97,6 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 		logger.Instance().WithFields(log.Fields{
 			"url": proxyPrefix + url,
 		}).Info("Request remote file")
-
-		logger.Instance().WithFields(log.Fields{
-			"NumCPU":       runtime.NumCPU(),
-			"NumCgoCall":   runtime.NumCgoCall(),
-			"NumGoRoutine": runtime.NumGoroutine(),
-		}).Info("System stats")
 	}
 
 	if res, err = client.Get(proxyPrefix + url); err != nil {
@@ -120,7 +113,9 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 
 		if res.StatusCode == 200 {
 			for key, _ := range res.Header {
-				w.Header().Add(key, res.Header.Get(key))
+				if strings.HasPrefix(key, "X-") {
+					w.Header().Add(key, res.Header.Get(key))
+				}
 			}
 
 			img, err := image.FromReader(res.Body)
@@ -137,18 +132,6 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 					logger.Instance().WithFields(log.Fields{
 						"error": err,
 					}).Error("Error encoding image")
-				}
-
-				if nbRequests++; nbRequests >= maxRequests {
-					runtime.GC()
-				}
-
-				if img, err := img.Deconstruct(); err == nil {
-					img.Dispose()
-				} else {
-					logger.Instance().WithFields(log.Fields{
-						"error": err,
-					}).Info("Dispose image error")
 				}
 			} else {
 				if debugMode {

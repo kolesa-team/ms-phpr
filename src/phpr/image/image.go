@@ -1,38 +1,37 @@
 package image
 
 import (
+	"image"
+	"image/color"
+	"image/jpeg"
 	"io"
 	"strconv"
 	"strings"
 
 	"../helper"
+	"github.com/disintegration/imaging"
 	"github.com/endeveit/go-snippets/cli"
 	"github.com/endeveit/go-snippets/config"
-	"github.com/rainycape/magick"
 )
 
-func FromReader(r io.Reader) (*magick.Image, error) {
-	return magick.Decode(r)
+func FromReader(r io.Reader) (image.Image, error) {
+	return imaging.Decode(r)
 }
 
-func ToWriter(image *magick.Image, w io.Writer) error {
-	info := magick.NewInfo()
-	info.SetFormat(image.Format())
-
-	return image.Encode(w, info)
+func ToWriter(image image.Image, w io.Writer) error {
+	return jpeg.Encode(w, image, &jpeg.Options{Quality: 75})
+	//	return imaging.Encode(w, image, imaging.JPEG)
 }
 
-func getBgColor() *magick.Pixel {
+func getBgColor() color.RGBA {
 	red, green, blue := parseConfigColor("image", "background")
 
-	pixel := magick.Pixel{
-		Red:     red,
-		Green:   green,
-		Blue:    blue,
-		Opacity: uint8(255),
+	return color.RGBA{
+		R: red,
+		G: green,
+		B: blue,
+		A: 255,
 	}
-
-	return &pixel
 }
 
 func parseConfigColor(section, key string) (red, green, blue uint8) {
@@ -60,11 +59,12 @@ func parseConfigColor(section, key string) (red, green, blue uint8) {
 	return
 }
 
-func parseConfigSize(section, key string) (width, height uint64) {
+func parseConfigSize(section, key string) image.Rectangle {
 	var (
-		size  []string
-		value string
-		err   error
+		width, height uint64
+		size          []string
+		value         string
+		err           error
 	)
 
 	value, err = config.Instance().String(section, key)
@@ -81,5 +81,5 @@ func parseConfigSize(section, key string) (width, height uint64) {
 	height, err = strconv.ParseUint(size[1], 10, 64)
 	helper.CheckError(err)
 
-	return
+	return image.Rect(0, 0, int(width), int(height))
 }

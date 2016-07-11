@@ -18,8 +18,7 @@ dep-install:
 	go get github.com/zenazn/goji/web
 	go get github.com/endeveit/go-snippets/cli
 	go get github.com/endeveit/go-snippets/config
-	#go get github.com/quirkey/magick
-	go get github.com/rainycape/magick
+	go get github.com/disintegration/imaging
 
 fmt:
 	gofmt -s=true -w $(CURDIR)/src

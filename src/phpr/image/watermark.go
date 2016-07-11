@@ -2,27 +2,26 @@ package image
 
 import (
 	"fmt"
+	"image"
+	"image/color"
 	"math/rand"
 	"sync"
 
 	"../helper"
-	"../logger"
-
-	log "github.com/Sirupsen/logrus"
+	"github.com/disintegration/imaging"
 	"github.com/endeveit/go-snippets/config"
-	"github.com/rainycape/magick"
 )
 
 var (
 	err                                                                  error
-	sizeThreshold, smallSize, bigSize, watermarkSize                     magick.Rect
+	sizeThreshold, smallSize, bigSize, watermarkSize, watermarkPos       image.Rectangle
 	sizeSmallWidth, sizeSmallHeight, sizeBigWidth, sizeBigHeight         int
-	colorThreshold                                                       magick.Pixel
+	colorThreshold                                                       color.Color
 	watermarkMargin                                                      int
 	watermarkPath                                                        string
 	fileBlackBig, fileBlackSmall, fileWhiteBig, fileWhiteSmall, filename string
 	once                                                                 sync.Once
-	watermarks                                                           map[string]*magick.Image
+	watermarks                                                           map[string]image.Image
 )
 
 const (
@@ -32,112 +31,89 @@ const (
 	CORNER_RIGHT_BOTTOM = 3
 )
 
-func Watermark(image *magick.Image) *magick.Image {
+func Watermark(image image.Image) image.Image {
 	initConfig()
 
 	watermarkSize = pickSize(image)
+	watermarkPos = watermarkSize
 
 	switch rand.Intn(4) {
 	case CORNER_LEFT_TOP:
-		watermarkSize.X = watermarkMargin
-		watermarkSize.Y = watermarkMargin
+		watermarkPos.Max.X = watermarkMargin
+		watermarkPos.Max.Y = watermarkMargin
 		break
 	case CORNER_RIGHT_TOP:
-		watermarkSize.X = image.Width() - (int(watermarkSize.Width) + watermarkMargin)
-		watermarkSize.Y = watermarkMargin
+		watermarkPos.Max.X = image.Bounds().Dx() - (int(watermarkSize.Dx()) + watermarkMargin)
+		watermarkPos.Max.Y = watermarkMargin
 		break
 	case CORNER_LEFT_BOTTOM:
-		watermarkSize.X = watermarkMargin
-		watermarkSize.Y = image.Height() - (int(watermarkSize.Height) + watermarkMargin)
+		watermarkPos.Max.X = watermarkMargin
+		watermarkPos.Max.Y = image.Bounds().Dy() - (int(watermarkSize.Dy()) + watermarkMargin)
 		break
 	case CORNER_RIGHT_BOTTOM:
-		watermarkSize.X = image.Width() - (int(watermarkSize.Width) + watermarkMargin)
-		watermarkSize.Y = image.Height() - (int(watermarkSize.Height) + watermarkMargin)
+		watermarkPos.Max.X = image.Bounds().Dx() - (int(watermarkSize.Dx()) + watermarkMargin)
+		watermarkPos.Max.Y = image.Bounds().Dy() - (int(watermarkSize.Dy()) + watermarkMargin)
 		break
 	}
 
 	color := pickColor(image, watermarkSize)
 
 	switch {
-	case color == "b" && watermarkSize.Width == bigSize.Width && watermarkSize.Height == bigSize.Height:
+	case color == "b" && watermarkSize.Dx() == bigSize.Dx() && watermarkSize.Dy() == bigSize.Dy():
 		filename = fileBlackBig
 		break
-	case color == "b" && watermarkSize.Width == smallSize.Width && watermarkSize.Height == smallSize.Height:
+	case color == "b" && watermarkSize.Dx() == smallSize.Dx() && watermarkSize.Dy() == smallSize.Dy():
 		filename = fileBlackSmall
 		break
-	case color == "w" && watermarkSize.Width == bigSize.Width && watermarkSize.Height == bigSize.Height:
+	case color == "w" && watermarkSize.Dx() == bigSize.Dx() && watermarkSize.Dy() == bigSize.Dy():
 		filename = fileWhiteBig
 		break
-	case color == "w" && watermarkSize.Width == smallSize.Width && watermarkSize.Height == smallSize.Height:
+	case color == "w" && watermarkSize.Dx() == smallSize.Dx() && watermarkSize.Dy() == smallSize.Dy():
 		filename = fileWhiteSmall
 		break
 	}
 
 	if wm, exists := watermarks[filename]; exists {
-		image.Composite(magick.CompositeAtop, wm, watermarkSize.X, watermarkSize.Y)
+		image = imaging.Overlay(image, wm, watermarkPos.Max, 1.0)
 	}
 
 	return image
 }
 
-func pickColor(image *magick.Image, rect magick.Rect) (color string) {
+func pickColor(img image.Image, rect image.Rectangle) (col string) {
 	var (
-		err    error
-		sImage *magick.Image
-		pixel  *magick.Pixel
+		sImage *image.NRGBA
 	)
 
-	color = "w"
+	col = "w"
 
-	if sImage, err = image.Crop(rect); err != nil {
-		logger.Instance().WithFields(log.Fields{
-			"error": err,
-		}).Info("Crop failed")
-	}
+	sImage = imaging.Crop(img, rect)
+	sImage = imaging.Resize(image.Image(sImage), 1, 1, imaging.Lanczos)
+	pR, pG, pB, _ := sImage.At(0, 0).RGBA()
+	tR, tG, tB, _ := colorThreshold.RGBA()
 
-	if sImage, err = sImage.Sample(1, 1); err != nil {
-		logger.Instance().WithFields(log.Fields{
-			"error": err,
-		}).Info("Sample to 1x1 failed")
-	}
-
-	if pixel, err = sImage.Pixel(0, 0); err != nil {
-		logger.Instance().WithFields(log.Fields{
-			"error": err,
-		}).Info("Get color for 1x1 failed")
-	}
-
-	if pixel.Red > colorThreshold.Red && pixel.Green > colorThreshold.Green && pixel.Blue > colorThreshold.Blue {
-		color = "b"
-	}
-
-	if sImage, err = sImage.Deconstruct(); err == nil {
-		sImage.Dispose()
-	} else {
-		logger.Instance().WithFields(log.Fields{
-			"error": err,
-		}).Info("Dispose image error")
+	if pR > tR && pG > tG && pB > tB {
+		col = "b"
 	}
 
 	return
 }
 
-func pickSize(image *magick.Image) (result magick.Rect) {
-	result = bigSize
-
-	if uint(image.Width()) < sizeThreshold.Width || uint(image.Height()) < sizeThreshold.Height {
-		result = smallSize
+func pickSize(image image.Image) image.Rectangle {
+	if image.Bounds().Dx() < sizeThreshold.Dx() || image.Bounds().Dy() < sizeThreshold.Dy() {
+		return smallSize
 	}
 
-	return result
+	return bigSize
 }
 
 func initConfig() {
 	once.Do(func() {
 		var (
-			w, h      uint64
-			watermark *magick.Image
+			watermark image.Image
+			err       error
 		)
+		watermarks = make(map[string]image.Image)
 
 		watermarkPath, err = config.Instance().String("watermark", "path")
 		helper.CheckError(err)
@@ -157,38 +133,29 @@ func initConfig() {
 		watermarkMargin, err = config.Instance().Int("watermark", "margin")
 		helper.CheckError(err)
 
-		w, h = parseConfigSize("watermark", "size_threshold")
-		sizeThreshold = magick.Rect{
-			Width:  uint(w),
-			Height: uint(h),
-		}
-		w, h = parseConfigSize("watermark", "size_big")
-		bigSize = magick.Rect{
-			Width:  uint(w),
-			Height: uint(h),
-		}
-		w, h = parseConfigSize("watermark", "size_small")
-		smallSize = magick.Rect{
-			Width:  uint(w),
-			Height: uint(h),
-		}
+		sizeThreshold = parseConfigSize("watermark", "size_threshold")
 
 		r, g, b := parseConfigColor("watermark", "color_threshold")
-		colorThreshold = magick.Pixel{
-			Red:     r,
-			Green:   g,
-			Blue:    b,
-			Opacity: uint8(255),
-		}
+		colorThreshold = color.Color(color.RGBA{
+			R: r,
+			G: g,
+			B: b,
+			A: uint8(255),
+		})
 
-		watermarks = make(map[string]*magick.Image)
 		for _, filename := range []string{fileWhiteBig, fileWhiteSmall, fileBlackBig, fileBlackSmall} {
-			watermark, err = magick.DecodeFile(fmt.Sprintf("%s%s", watermarkPath, filename))
+			watermark, err = imaging.Open(fmt.Sprintf("%s%s", watermarkPath, filename))
 			helper.CheckError(err)
 
 			watermarks[filename] = watermark
-		}
 
-		watermark.Deconstruct()
+			if filename == fileBlackBig {
+				bigSize = watermark.Bounds()
+			}
+
+			if filename == fileBlackSmall {
+				smallSize = watermark.Bounds()
+			}
+		}
 	})
 }

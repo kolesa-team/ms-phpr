@@ -1,65 +1,35 @@
 package image
 
 import (
-	"math"
+	"image"
+	"image/draw"
 
-	"../logger"
-
-	log "github.com/Sirupsen/logrus"
-	"github.com/rainycape/magick"
+	"github.com/disintegration/imaging"
 )
 
-func Resize(img *magick.Image, newWidth, newHeight int, bestfit bool) *magick.Image {
-	var (
-		err                 error
-		oldWidth            int = img.Width()
-		oldHeight           int = img.Height()
-		tmpWidth, tmpHeight int
-		oldRatio            float64 = float64(oldWidth) / float64(oldHeight)
-		newRatio            float64 = float64(newWidth) / float64(newHeight)
-	)
-
+func Resize(img image.Image, newWidth, newHeight int, bestfit bool) image.Image {
 	if bestfit {
-		if img, err = img.CropResize(newWidth, newHeight, magick.FSinc, magick.CSCenter); err != nil {
-			logger.Instance().WithFields(log.Fields{
-				"error": err,
-			}).Info("Resize failed")
-		}
+		img = imaging.Thumbnail(img, newWidth, newHeight, imaging.Lanczos)
 	} else {
-		if oldRatio > newRatio {
-			// Ширина больше
-			tmpWidth = newWidth
-			tmpHeight = int(float64(newWidth) / oldRatio)
+		var (
+			bg            *image.RGBA
+			originalRatio float64 = float64(img.Bounds().Dx()) / float64(img.Bounds().Dy())
+			newRatio      float64 = float64(newWidth) / float64(newHeight)
+			tmpWidth      int     = newWidth
+			tmpHeight     int     = newHeight
+		)
+
+		if originalRatio > newRatio {
+			tmpHeight = 0
 		} else {
-			// Высота больше
-			tmpHeight = newHeight
-			tmpWidth = int(float64(newHeight) * oldRatio)
+			tmpWidth = 0
 		}
 
-		if img, err = img.Sample(tmpWidth, tmpHeight); err != nil {
-			logger.Instance().WithFields(log.Fields{
-				"error": err,
-			}).Info("Resample failed")
-		}
+		img = imaging.Resize(img, tmpWidth, tmpHeight, imaging.Lanczos)
+		bg = image.NewRGBA(image.Rect(0, 0, newWidth, newHeight))
+		draw.Draw(bg, bg.Bounds(), &image.Uniform{getBgColor()}, image.ZP, draw.Src)
 
-		borderWidth := float64((newWidth - img.Width()) / 2)
-		borderHeight := float64((newHeight - img.Height()) / 2)
-
-		borderWidth = math.Max(0.0, borderWidth)
-		borderHeight = math.Max(0.0, borderHeight)
-
-		rect := magick.Rect{
-			Width:  uint(borderWidth),
-			Height: uint(borderHeight),
-			X:      0,
-			Y:      0,
-		}
-
-		if img, err = img.AddBorder(rect, getBgColor()); err != nil {
-			logger.Instance().WithFields(log.Fields{
-				"error": err,
-			}).Info("Add border failed")
-		}
+		img = imaging.PasteCenter(bg, img)
 	}
 
 	return img
