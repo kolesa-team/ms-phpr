@@ -30,6 +30,7 @@ Go PHoto PRocessor
 [proxy]
 
  * url = http://strg.kolesa.kz/ # where to find images
+ * timeout = 1000 # how long to wait for upstream response
 
 [image]
 
@@ -44,6 +45,4 @@ Go PHoto PRocessor
  * file_white_small = watermark-w-s.png # filename for white small watermark
  * margin = 20 # margin for watermark in pixels
  * path = /path/to/directory/ # path ro directory containing watermark files
- * size_big = 255x100 # size of big watermark image
- * size_small = 85x35 # size of small watermark image
  * size_threshold = 280x210 # threshold for choosing big/small watermark image
