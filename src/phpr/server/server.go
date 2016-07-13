@@ -120,7 +120,7 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 
 			img, err := image.FromReader(res.Body)
 			if err == nil {
-				if query.Width > 0 && query.Height > 0 {
+				if query.Width > 0 || query.Height > 0 {
 					img = image.Resize(img, query.Width, query.Height, query.IsBestfit)
 				}
 
