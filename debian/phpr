@@ -44,7 +44,7 @@ running() {
 
 case "$1" in
     start)
-        if start-stop-daemon --start --quiet --chuid phpr:phpr --make-pidfile --pidfile $PIDFILE --exec $DAEMON -- $ARGS
+        if start-stop-daemon --start --quiet --chuid phpr:phpr --make-pidfile --pidfile $PIDFILE --background --exec $DAEMON -- $ARGS
         then
             echo "$NAME started."
         else
