@@ -36,7 +36,9 @@ deb: $(CURDIR)/out/$(APP_NAME)
 	mkdir $(DEBIAN_TMP)
 	mkdir -p $(DEBIAN_TMP)/etc/$(APP_NAME)
 	mkdir -p $(DEBIAN_TMP)/usr/local/bin
-	mkdir -p $(DEBIAN_TMP)/opt/ms-phpr/data/{kolesa,krisha,market}
+	mkdir -p $(DEBIAN_TMP)/opt/ms-phpr/data/kolesa
+	mkdir -p $(DEBIAN_TMP)/opt/ms-phpr/data/krisha
+	mkdir -p $(DEBIAN_TMP)/opt/ms-phpr/data/market
 	install -m 644 $(CURDIR)/data/config.cfg $(DEBIAN_TMP)/etc/$(APP_NAME)
 	install -m 755 $(CURDIR)/out/$(APP_NAME) $(DEBIAN_TMP)/usr/local/bin
 	install -m 644 $(CURDIR)/data/kolesa/* $(DEBIAN_TMP)/opt/ms-phpr/data/kolesa
