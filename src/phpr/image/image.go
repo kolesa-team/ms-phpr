@@ -20,7 +20,6 @@ func FromReader(r io.Reader) (image.Image, error) {
 
 func ToWriter(image image.Image, w io.Writer) error {
 	return jpeg.Encode(w, image, &jpeg.Options{Quality: 75})
-	//	return imaging.Encode(w, image, imaging.JPEG)
 }
 
 func getBgColor() color.RGBA {

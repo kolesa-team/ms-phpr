@@ -27,7 +27,7 @@ func main() {
 
 	app.Name = "phpr"
 	app.Usage = "Photo proxy with resizing and watermarks"
-	app.Version = "0.1.1"
+	app.Version = "0.1.2"
 	app.Author = "Igor Borodikhin"
 	app.Email = "iborodikhin@gmail.com"
 	app.Action = actionRun
@@ -35,10 +35,6 @@ func main() {
 		cli.BoolFlag{
 			Name:  "daemon, d",
 			Usage: "If provided, the service will be launched as daemon",
-		},
-		cli.BoolFlag{
-			Name:  "debug, b",
-			Usage: "If provided, the service will be launched in debug mode",
 		},
 		cli.StringFlag{
 			Name:  "config, c",
@@ -74,7 +70,7 @@ func actionRun(c *cli.Context) error {
 
 	server := manners.NewWithServer(&http.Server{
 		Addr:         addr,
-		Handler:      server.NewMux(c.Bool("debug")),
+		Handler:      server.NewMux(),
 		ReadTimeout:  time.Duration(keepAlive) * time.Second,
 		WriteTimeout: time.Duration(keepAlive) * time.Second,
 	})

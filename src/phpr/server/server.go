@@ -28,7 +28,6 @@ type QueryData struct {
 
 var (
 	enableAccessLog bool = false
-	debugMode       bool = false
 	proxyPrefix     string
 	proxyTimeout    int
 	once            sync.Once
@@ -65,9 +64,8 @@ func initServer() {
 }
 
 // Возвращает объект нового мультиплексора
-func NewMux(isDebug bool) *web.Mux {
+func NewMux() *web.Mux {
 	initServer()
-	debugMode = isDebug
 
 	m := web.New()
 
@@ -93,19 +91,11 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 	query := parseQuery(r.Form)
 	url := c.URLParams["$1"]
 
-	if debugMode {
-		logger.Instance().WithFields(log.Fields{
-			"url": proxyPrefix + url,
-		}).Info("Request remote file")
-	}
-
 	if res, err = client.Get(proxyPrefix + url); err != nil {
-		if debugMode {
-			logger.Instance().WithFields(log.Fields{
-				"error":         err,
-				"response_code": 504,
-			}).Error("Error while requesting remote file")
-		}
+		logger.Instance().WithFields(log.Fields{
+			"error":         err,
+			"response_code": 504,
+		}).Error("Error while requesting remote file")
 
 		http.Error(w, "504 Gateway Timeout", 504)
 	} else {
@@ -134,21 +124,17 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 					}).Error("Error encoding image")
 				}
 			} else {
-				if debugMode {
-					logger.Instance().WithFields(log.Fields{
-						"error":         err,
-						"response_code": 502,
-					}).Error("Error while reading image from response")
-				}
+				logger.Instance().WithFields(log.Fields{
+					"error":         err,
+					"response_code": 502,
+				}).Error("Error while reading image from response")
 
 				http.Error(w, "502 Bad Gateway", 502)
 			}
 		} else {
-			if debugMode {
-				logger.Instance().WithFields(log.Fields{
-					"response_code": res.StatusCode,
-				}).Error("Wrong status received")
-			}
+			logger.Instance().WithFields(log.Fields{
+				"response_code": res.StatusCode,
+			}).Error("Wrong status received")
 
 			http.Error(w, res.Status, res.StatusCode)
 		}
@@ -171,11 +157,9 @@ func parseQuery(query url.Values) QueryData {
 			result.Width, err = strconv.Atoi(size[0])
 			result.Height, err = strconv.Atoi(size[1])
 		} else {
-			if debugMode {
-				logger.Instance().WithFields(log.Fields{
-					"size": valSize[0],
-				}).Error("Wrong size passed")
-			}
+			logger.Instance().WithFields(log.Fields{
+				"size": valSize[0],
+			}).Error("Wrong size passed")
 		}
 
 	}
@@ -185,11 +169,9 @@ func parseQuery(query url.Values) QueryData {
 	}
 
 	if err != nil {
-		if debugMode {
-			logger.Instance().WithFields(log.Fields{
-				"error": err,
-			}).Error("Error processing query parameters")
-		}
+		logger.Instance().WithFields(log.Fields{
+			"error": err,
+		}).Error("Error processing query parameters")
 	}
 
 	return result

@@ -8,6 +8,8 @@ import (
 	"sync"
 
 	"../helper"
+	"../logger"
+	log "github.com/Sirupsen/logrus"
 	"github.com/disintegration/imaging"
 	"github.com/endeveit/go-snippets/config"
 )
@@ -75,6 +77,10 @@ func Watermark(image image.Image) image.Image {
 
 	if wm, exists := watermarks[filename]; exists {
 		image = imaging.Overlay(image, wm, watermarkPos.Max, 1.0)
+	} else {
+		logger.Instance().WithFields(log.Fields{
+			"filename": filename,
+		}).Error("File not found in watermarks set")
 	}
 
 	return image
