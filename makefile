@@ -19,7 +19,7 @@ dep-install:
 	go get github.com/endeveit/go-snippets/cli
 	go get github.com/endeveit/go-snippets/config
 	go get github.com/disintegration/imaging
-	go get gopkg.in/gemnasium/logrus-graylog-hook.v1
+	go get github.com/gemnasium/logrus-hooks/graylog
 
 fmt:
 	gofmt -s=true -w $(CURDIR)/src

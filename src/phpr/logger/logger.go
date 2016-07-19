@@ -8,7 +8,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/endeveit/go-snippets/config"
-	"gopkg.in/gemnasium/logrus-graylog-hook.v1"
+	"github.com/gemnasium/logrus-hooks/graylog"
 )
 
 var (
@@ -24,13 +24,11 @@ func initLogger() {
 		// Настройка логов
 		logger = logrus.New()
 
-		if graylogHost, err := config.Instance().String("graylog", "host"); err == nil {
-			if graylogPort, err := config.Instance().Int("graylog", "port"); err == nil {
-				extra := make(map[string]interface{})
-				extra["hostname"], _ = os.Hostname()
+		if graylogAddr, err := config.Instance().String("graylog", "address"); err == nil {
+			extra := make(map[string]interface{})
+			extra["hostname"], _ = os.Hostname()
 
-				logger.Hooks.Add(graylog.NewGraylogHook(fmt.Sprintf("%s:%d", graylogHost, graylogPort), "ms-phpr", extra))
-			}
+			logger.Hooks.Add(graylog.NewGraylogHook(graylogAddr, "ms-phpr", extra))
 		}
 
 		log.SetOutput(logger.Writer())
