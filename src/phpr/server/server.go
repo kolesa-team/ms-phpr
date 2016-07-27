@@ -1,6 +1,7 @@
 package server
 
 import (
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -118,7 +119,10 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 					img = image.Watermark(img)
 				}
 
-				if err := image.ToWriter(img, w); err != nil {
+				if buffer, err := image.ToBuffer(img); err == nil {
+					w.Header().Add("Content-Length", strconv.Itoa(len(buffer.Bytes())))
+					io.Copy(w, buffer)
+				} else {
 					logger.Instance().WithFields(log.Fields{
 						"error": err,
 					}).Error("Error encoding image")

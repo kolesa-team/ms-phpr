@@ -1,6 +1,7 @@
 package image
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	"image/jpeg"
@@ -18,8 +19,15 @@ func FromReader(r io.Reader) (image.Image, error) {
 	return imaging.Decode(r)
 }
 
-func ToWriter(image image.Image, w io.Writer) error {
-	return jpeg.Encode(w, image, &jpeg.Options{Quality: 75})
+func ToBuffer(image image.Image) (*bytes.Buffer, error) {
+	buffer := new(bytes.Buffer)
+	err := jpeg.Encode(buffer, image, &jpeg.Options{Quality: 75})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return buffer, err
 }
 
 func getBgColor() color.RGBA {
