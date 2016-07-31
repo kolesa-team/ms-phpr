@@ -15,15 +15,15 @@ import (
 )
 
 var (
-	err                                                                  error
-	sizeThreshold, smallSize, bigSize, watermarkSize, watermarkPos       image.Rectangle
-	sizeSmallWidth, sizeSmallHeight, sizeBigWidth, sizeBigHeight         int
-	colorThreshold                                                       color.Color
-	watermarkMargin                                                      int
-	watermarkPath                                                        string
-	fileBlackBig, fileBlackSmall, fileWhiteBig, fileWhiteSmall, filename string
-	once                                                                 sync.Once
-	watermarks                                                           map[string]image.Image
+	err                                                            error
+	sizeThreshold, smallSize, bigSize, watermarkSize, watermarkPos image.Rectangle
+	sizeSmallWidth, sizeSmallHeight, sizeBigWidth, sizeBigHeight   int
+	colorThreshold                                                 color.Color
+	watermarkMargin                                                int
+	watermarkPath                                                  string
+	fileBlackBig, fileBlackSmall, fileWhiteBig, fileWhiteSmall     string
+	once                                                           sync.Once
+	watermarks                                                     map[string]image.Image
 )
 
 const (
@@ -33,10 +33,14 @@ const (
 	CORNER_RIGHT_BOTTOM = 3
 )
 
-func Watermark(image image.Image) image.Image {
+func Watermark(img image.Image) image.Image {
 	initConfig()
+	var (
+		filename                    string
+		watermarkSize, watermarkPos image.Rectangle
+	)
 
-	watermarkSize = pickSize(image)
+	watermarkSize = pickSize(img)
 	watermarkPos = watermarkSize
 
 	switch rand.Intn(4) {
@@ -45,20 +49,20 @@ func Watermark(image image.Image) image.Image {
 		watermarkPos.Max.Y = watermarkMargin
 		break
 	case CORNER_RIGHT_TOP:
-		watermarkPos.Max.X = image.Bounds().Dx() - (int(watermarkSize.Dx()) + watermarkMargin)
+		watermarkPos.Max.X = img.Bounds().Dx() - (int(watermarkSize.Dx()) + watermarkMargin)
 		watermarkPos.Max.Y = watermarkMargin
 		break
 	case CORNER_LEFT_BOTTOM:
 		watermarkPos.Max.X = watermarkMargin
-		watermarkPos.Max.Y = image.Bounds().Dy() - (int(watermarkSize.Dy()) + watermarkMargin)
+		watermarkPos.Max.Y = img.Bounds().Dy() - (int(watermarkSize.Dy()) + watermarkMargin)
 		break
 	case CORNER_RIGHT_BOTTOM:
-		watermarkPos.Max.X = image.Bounds().Dx() - (int(watermarkSize.Dx()) + watermarkMargin)
-		watermarkPos.Max.Y = image.Bounds().Dy() - (int(watermarkSize.Dy()) + watermarkMargin)
+		watermarkPos.Max.X = img.Bounds().Dx() - (int(watermarkSize.Dx()) + watermarkMargin)
+		watermarkPos.Max.Y = img.Bounds().Dy() - (int(watermarkSize.Dy()) + watermarkMargin)
 		break
 	}
 
-	color := pickColor(image, watermarkSize)
+	color := pickColor(img, watermarkSize)
 
 	switch {
 	case color == "b" && watermarkSize.Dx() == bigSize.Dx() && watermarkSize.Dy() == bigSize.Dy():
@@ -76,14 +80,14 @@ func Watermark(image image.Image) image.Image {
 	}
 
 	if wm, exists := watermarks[filename]; exists {
-		image = imaging.Overlay(image, wm, watermarkPos.Max, 1.0)
+		img = imaging.Overlay(img, wm, watermarkPos.Max, 1.0)
 	} else {
 		logger.Instance().WithFields(log.Fields{
 			"filename": filename,
 		}).Error("File not found in watermarks set")
 	}
 
-	return image
+	return img
 }
 
 func pickColor(img image.Image, rect image.Rectangle) (col string) {
