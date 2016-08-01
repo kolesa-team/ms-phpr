@@ -27,7 +27,7 @@ func main() {
 
 	app.Name = "phpr"
 	app.Usage = "Photo proxy with resizing and watermarks"
-	app.Version = "0.1.5"
+	app.Version = "0.1.6"
 	app.Author = "Igor Borodikhin"
 	app.Email = "iborodikhin@gmail.com"
 	app.Action = actionRun
@@ -35,6 +35,10 @@ func main() {
 		cli.BoolFlag{
 			Name:  "daemon, d",
 			Usage: "If provided, the service will be launched as daemon",
+		},
+		cli.BoolFlag{
+			Name:  "debug, b",
+			Usage: "If provided, the service will be launched in debug mode",
 		},
 		cli.StringFlag{
 			Name:  "config, c",
@@ -67,6 +71,10 @@ func actionRun(c *cli.Context) error {
 
 	keepAlive, err := cnf.Int("http", "keep_alive")
 	hcli.CheckError(err)
+
+	if c.Bool("debug") {
+		logger.Instance().Level = log.DebugLevel
+	}
 
 	server := manners.NewWithServer(&http.Server{
 		Addr:         addr,

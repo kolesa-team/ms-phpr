@@ -15,15 +15,15 @@ import (
 )
 
 var (
-	err                                                            error
-	sizeThreshold, smallSize, bigSize, watermarkSize, watermarkPos image.Rectangle
-	sizeSmallWidth, sizeSmallHeight, sizeBigWidth, sizeBigHeight   int
-	colorThreshold                                                 color.Color
-	watermarkMargin                                                int
-	watermarkPath                                                  string
-	fileBlackBig, fileBlackSmall, fileWhiteBig, fileWhiteSmall     string
-	once                                                           sync.Once
-	watermarks                                                     map[string]image.Image
+	isDebug                                                    bool = false
+	err                                                        error
+	sizeThreshold, smallSize, bigSize                          image.Rectangle
+	colorThreshold                                             color.Color
+	watermarkMargin                                            int
+	watermarkPath                                              string
+	fileBlackBig, fileBlackSmall, fileWhiteBig, fileWhiteSmall string
+	once                                                       sync.Once
+	watermarks                                                 map[string]image.Image
 )
 
 const (
@@ -35,6 +35,7 @@ const (
 
 func Watermark(img image.Image) image.Image {
 	initConfig()
+
 	var (
 		filename                    string
 		watermarkSize, watermarkPos image.Rectangle
@@ -110,6 +111,11 @@ func pickColor(img image.Image, rect image.Rectangle) (col string) {
 }
 
 func pickSize(image image.Image) image.Rectangle {
+	logger.Instance().WithFields(log.Fields{
+		"image":     image.Bounds().Max,
+		"threshold": sizeThreshold.Max,
+	}).Debug("Image size")
+
 	if image.Bounds().Dx() < sizeThreshold.Dx() || image.Bounds().Dy() < sizeThreshold.Dy() {
 		return smallSize
 	}
