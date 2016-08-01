@@ -15,7 +15,6 @@ import (
 )
 
 var (
-	isDebug                                                    bool = false
 	err                                                        error
 	sizeThreshold, smallSize, bigSize                          image.Rectangle
 	colorThreshold                                             color.Color
