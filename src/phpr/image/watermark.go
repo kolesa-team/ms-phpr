@@ -79,6 +79,13 @@ func Watermark(img image.Image) image.Image {
 		break
 	}
 
+	logger.Instance().WithFields(log.Fields{
+		"image":     img.Bounds().Max,
+		"threshold": sizeThreshold.Max,
+		"watermark": watermarkSize.Max,
+		"filename":  filename,
+	}).Debug("Put watermark")
+
 	if wm, exists := watermarks[filename]; exists {
 		img = imaging.Overlay(img, wm, watermarkPos.Max, 1.0)
 	} else {
@@ -110,11 +117,6 @@ func pickColor(img image.Image, rect image.Rectangle) (col string) {
 }
 
 func pickSize(image image.Image) image.Rectangle {
-	logger.Instance().WithFields(log.Fields{
-		"image":     image.Bounds().Max,
-		"threshold": sizeThreshold.Max,
-	}).Debug("Image size")
-
 	if image.Bounds().Dx() < sizeThreshold.Dx() || image.Bounds().Dy() < sizeThreshold.Dy() {
 		return smallSize
 	}

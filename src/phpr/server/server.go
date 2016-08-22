@@ -91,6 +91,7 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 	_ = r.ParseForm()
 	query := parseQuery(r.Form)
 	url := c.URLParams["$1"]
+	format := strings.ToLower(url[strings.LastIndex(url, ".")+1:])
 
 	if res, err = client.Get(proxyPrefix + url); err != nil {
 		logger.Instance().WithFields(log.Fields{
@@ -110,6 +111,7 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 			}
 
 			img, err := image.FromReader(res.Body)
+
 			if err == nil {
 				if query.Width > 0 || query.Height > 0 {
 					img = image.Resize(img, query.Width, query.Height, query.IsBestfit)
@@ -119,7 +121,7 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 					img = image.Watermark(img)
 				}
 
-				if buffer, err := image.ToBuffer(img); err == nil {
+				if buffer, err := image.ToBuffer(img, format); err == nil {
 					w.Header().Add("Content-Length", strconv.Itoa(len(buffer.Bytes())))
 					io.Copy(w, buffer)
 				} else {

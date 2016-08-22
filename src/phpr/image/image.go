@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"image"
 	"image/color"
+	"image/gif"
 	"image/jpeg"
+	"image/png"
 	"io"
 	"strconv"
 	"strings"
@@ -19,9 +21,16 @@ func FromReader(r io.Reader) (image.Image, error) {
 	return imaging.Decode(r)
 }
 
-func ToBuffer(image image.Image) (*bytes.Buffer, error) {
-	buffer := new(bytes.Buffer)
-	err := jpeg.Encode(buffer, image, &jpeg.Options{Quality: 75})
+func ToBuffer(image image.Image, format string) (buffer *bytes.Buffer, err error) {
+	buffer = new(bytes.Buffer)
+	switch format {
+	case "gif":
+		err = gif.Encode(buffer, image, &gif.Options{})
+	case "png":
+		err = png.Encode(buffer, image)
+	default:
+		err = jpeg.Encode(buffer, image, &jpeg.Options{Quality: 75})
+	}
 
 	if err != nil {
 		return nil, err
