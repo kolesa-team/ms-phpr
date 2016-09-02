@@ -36,6 +36,7 @@ Go PHoto PRocessor
  * size_threshold = 280x210 # threshold for choosing big/small watermark image
 
 [stats]
+
  * period = 300 # period for collecting statistics
 
 **Statistics**
