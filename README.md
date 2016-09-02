@@ -35,7 +35,10 @@ Go PHoto PRocessor
  * path = /path/to/directory/ # path ro directory containing watermark files
  * size_threshold = 280x210 # threshold for choosing big/small watermark image
 
-** Statistics **
+[stats]
+ * period = 300 # period for collecting statistics
+
+**Statistics**
 
 Very small amount of statistics may be accessed by url `/_status`
 
