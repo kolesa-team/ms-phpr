@@ -37,7 +37,7 @@ Go PHoto PRocessor
 
 [stats]
 
- * period = 300 # period for collecting statistics
+ * period = 300 # period in seconds for collecting statistics
 
 **Statistics**
 
