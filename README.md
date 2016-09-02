@@ -34,3 +34,8 @@ Go PHoto PRocessor
  * margin = 20 # margin for watermark in pixels
  * path = /path/to/directory/ # path ro directory containing watermark files
  * size_threshold = 280x210 # threshold for choosing big/small watermark image
+
+** Statistics **
+
+Very small amount of statistics may be accessed by url `/_status`
+
