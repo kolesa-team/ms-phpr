@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -35,6 +36,10 @@ var (
 	client          http.Client
 	nbRequests      int = 0
 	maxRequests     int
+	statPeriod      int
+	statKeys        []string = []string{"nb_requests", "nb_failures", "nb_success"}
+	counters        map[string]uint64
+	queue           map[string][]uint64
 )
 
 // Инициализация ключей
@@ -61,6 +66,18 @@ func initServer() {
 		client = http.Client{
 			Timeout: time.Duration(time.Duration(proxyTimeout) * time.Millisecond),
 		}
+
+		counters = make(map[string]uint64, len(statKeys))
+		queue = make(map[string][]uint64, len(statKeys))
+
+		for _, key := range statKeys {
+			counters[key] = 0
+			queue[key] = make([]uint64, 0)
+		}
+
+		if statPeriod, err = config.Instance().Int("stats", "period"); err != nil {
+			statPeriod = 300
+		}
 	})
 }
 
@@ -77,9 +94,46 @@ func NewMux() *web.Mux {
 
 	m.Use(mwRecoverer)
 
+	m.Get("/_status", handleStatus)
 	m.Get(regexp.MustCompile(`^/(.*)$`), handleRequest)
 
+	// Считаем статистику за последние 5 минут
+	go func() {
+		for {
+			for _, key := range statKeys {
+				queue[key] = append(queue[key], counters[key])
+
+				if len(queue[key]) > statPeriod {
+					queue[key] = queue[key][len(queue[key])-statPeriod:]
+				}
+			}
+
+			duration, _ := time.ParseDuration("1s")
+			time.Sleep(duration)
+		}
+	}()
+
 	return m
+}
+
+func handleStatus(c web.C, w http.ResponseWriter, r *http.Request) {
+	var (
+		head, tail uint64
+	)
+
+	w.Header().Set("Content-Type", "text/plain")
+
+	for _, key := range statKeys {
+		w.Write([]byte(fmt.Sprintf("%s: %d\n", key, counters[key])))
+	}
+
+	w.Write([]byte("\r\n\r\n"))
+
+	for _, key := range statKeys {
+		head = queue[key][0]
+		tail = queue[key][len(queue[key])-1]
+		w.Write([]byte(fmt.Sprintf("%s_%ds: %d\n", key, statPeriod, tail-head)))
+	}
 }
 
 func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
@@ -87,6 +141,8 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 		res *http.Response
 		err error
 	)
+
+	counters["nb_requests"]++
 
 	_ = r.ParseForm()
 	query := parseQuery(r.Form)
@@ -100,6 +156,7 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 		}).Error("Error while requesting remote file")
 
 		http.Error(w, "504 Gateway Timeout", 504)
+		counters["nb_failures"]++
 	} else {
 		defer res.Body.Close()
 
@@ -124,10 +181,15 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 				if buffer, err := image.ToBuffer(img, format); err == nil {
 					w.Header().Add("Content-Length", strconv.Itoa(len(buffer.Bytes())))
 					io.Copy(w, buffer)
+					counters["nb_success"]++
 				} else {
 					logger.Instance().WithFields(log.Fields{
-						"error": err,
+						"error":         err,
+						"response_code": 500,
 					}).Error("Error encoding image")
+
+					http.Error(w, "500 Internal Server Error", 500)
+					counters["nb_failures"]++
 				}
 			} else {
 				logger.Instance().WithFields(log.Fields{
@@ -136,6 +198,7 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 				}).Error("Error while reading image from response")
 
 				http.Error(w, "502 Bad Gateway", 502)
+				counters["nb_failures"]++
 			}
 		} else {
 			logger.Instance().WithFields(log.Fields{
@@ -143,6 +206,7 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 			}).Error("Wrong status received")
 
 			http.Error(w, res.Status, res.StatusCode)
+			counters["nb_failures"]++
 		}
 	}
 }
