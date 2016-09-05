@@ -33,6 +33,7 @@ var (
 	proxyPrefix     string
 	proxyTimeout    int
 	once            sync.Once
+	lock            sync.RWMutex
 	client          http.Client
 	nbRequests      int = 0
 	maxRequests     int
@@ -100,6 +101,7 @@ func NewMux() *web.Mux {
 	// Считаем статистику за последние 5 минут
 	go func() {
 		for {
+			lock.Lock()
 			for _, key := range statKeys {
 				queue[key] = append(queue[key], counters[key])
 
@@ -107,6 +109,7 @@ func NewMux() *web.Mux {
 					queue[key] = queue[key][len(queue[key])-statPeriod:]
 				}
 			}
+			lock.Unlock()
 
 			duration, _ := time.ParseDuration("1s")
 			time.Sleep(duration)
@@ -123,17 +126,21 @@ func handleStatus(c web.C, w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "text/plain")
 
+	lock.Lock()
 	for _, key := range statKeys {
 		w.Write([]byte(fmt.Sprintf("%s: %d\n", key, counters[key])))
 	}
+	lock.Unlock()
 
 	w.Write([]byte("\r\n\r\n"))
 
+	lock.Lock()
 	for _, key := range statKeys {
 		head = queue[key][0]
 		tail = queue[key][len(queue[key])-1]
 		w.Write([]byte(fmt.Sprintf("%s_%ds: %d\n", key, statPeriod, tail-head)))
 	}
+	lock.Unlock()
 }
 
 func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
@@ -142,7 +149,7 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 		err error
 	)
 
-	counters["nb_requests"]++
+	logRequest("nb_requests")
 
 	_ = r.ParseForm()
 	query := parseQuery(r.Form)
@@ -156,7 +163,8 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 		}).Error("Error while requesting remote file")
 
 		http.Error(w, "504 Gateway Timeout", 504)
-		counters["nb_failures"]++
+
+		logRequest("nb_failures")
 	} else {
 		defer res.Body.Close()
 
@@ -181,7 +189,7 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 				if buffer, err := image.ToBuffer(img, format); err == nil {
 					w.Header().Add("Content-Length", strconv.Itoa(len(buffer.Bytes())))
 					io.Copy(w, buffer)
-					counters["nb_success"]++
+					logRequest("nb_success")
 				} else {
 					logger.Instance().WithFields(log.Fields{
 						"error":         err,
@@ -189,7 +197,7 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 					}).Error("Error encoding image")
 
 					http.Error(w, "500 Internal Server Error", 500)
-					counters["nb_failures"]++
+					logRequest("nb_failures")
 				}
 			} else {
 				logger.Instance().WithFields(log.Fields{
@@ -198,7 +206,7 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 				}).Error("Error while reading image from response")
 
 				http.Error(w, "502 Bad Gateway", 502)
-				counters["nb_failures"]++
+				logRequest("nb_failures")
 			}
 		} else {
 			logger.Instance().WithFields(log.Fields{
@@ -206,7 +214,7 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 			}).Error("Wrong status received")
 
 			http.Error(w, res.Status, res.StatusCode)
-			counters["nb_failures"]++
+			logRequest("nb_failures")
 		}
 	}
 }
@@ -245,4 +253,12 @@ func parseQuery(query url.Values) QueryData {
 	}
 
 	return result
+}
+
+func logRequest(key string) {
+	lock.Lock()
+	if _, ok := counters[key]; ok {
+		counters[key]++
+	}
+	lock.Unlock()
 }
