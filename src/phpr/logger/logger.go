@@ -7,7 +7,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/endeveit/go-snippets/config"
-	"github.com/gemnasium/logrus-hooks/graylog"
+	"github.com/gemnasium/logrus-graylog-hook"
 )
 
 var (
@@ -27,7 +27,7 @@ func initLogger() {
 			extra := make(map[string]interface{})
 			extra["hostname"], _ = os.Hostname()
 
-			logger.Hooks.Add(graylog.NewGraylogHook(graylogAddr, "ms-phpr", extra))
+			logger.Hooks.Add(graylog.NewGraylogHook(graylogAddr, extra))
 		}
 
 		log.SetOutput(logger.Writer())
