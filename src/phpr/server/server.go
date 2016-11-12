@@ -155,8 +155,13 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 	query := parseQuery(r.Form)
 	url := c.URLParams["$1"]
 	format := strings.ToLower(url[strings.LastIndex(url, ".")+1:])
+	res, err = client.Get(proxyPrefix + url)
 
-	if res, err = client.Get(proxyPrefix + url); err != nil {
+	if res != nil {
+		defer res.Body.Close()
+	}
+
+	if err != nil {
 		logger.Instance().WithFields(log.Fields{
 			"error":         err,
 			"response_code": 504,
@@ -166,8 +171,6 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 
 		logRequest("nb_failures")
 	} else {
-		defer res.Body.Close()
-
 		if res.StatusCode == 200 {
 			for key, _ := range res.Header {
 				if strings.HasPrefix(key, "X-") {
