@@ -164,10 +164,10 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Instance().WithFields(log.Fields{
 			"error":         err,
-			"response_code": 504,
+			"response_code": http.StatusGatewayTimeout,
 		}).Error("Error while requesting remote file")
 
-		http.Error(w, "504 Gateway Timeout", 504)
+		http.Error(w, http.StatusText(http.StatusGatewayTimeout), http.StatusGatewayTimeout)
 
 		logRequest("nb_failures")
 	} else {
@@ -196,19 +196,19 @@ func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
 				} else {
 					logger.Instance().WithFields(log.Fields{
 						"error":         err,
-						"response_code": 500,
+						"response_code": http.StatusInternalServerError,
 					}).Error("Error encoding image")
 
-					http.Error(w, "500 Internal Server Error", 500)
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 					logRequest("nb_failures")
 				}
 			} else {
 				logger.Instance().WithFields(log.Fields{
 					"error":         err,
-					"response_code": 502,
+					"response_code": http.StatusBadGateway,
 				}).Error("Error while reading image from response")
 
-				http.Error(w, "502 Bad Gateway", 502)
+				http.Error(w, http.StatusText(http.StatusBadGateway), http.StatusBadGateway)
 				logRequest("nb_failures")
 			}
 		} else {
