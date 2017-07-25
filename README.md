@@ -41,5 +41,6 @@ Go PHoto PRocessor
 
 **Statistics**
 
-Very small amount of statistics may be accessed by url `/_status`
+Very small amount of statistics is accessible by url `/_status`
 
+Current running version may is accessible by url `/_version`

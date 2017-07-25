@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"../consts"
 	"../image"
 	"../logger"
 
@@ -96,6 +97,7 @@ func NewMux() *web.Mux {
 	m.Use(mwRecoverer)
 
 	m.Get("/_status", handleStatus)
+	m.Get("/_version", handleVersion)
 	m.Get(regexp.MustCompile(`^/(.*)$`), handleRequest)
 
 	// Считаем статистику за последние 5 минут
@@ -117,6 +119,10 @@ func NewMux() *web.Mux {
 	}()
 
 	return m
+}
+
+func handleVersion(c web.C, w http.ResponseWriter, r *http.Request) {
+	http.Error(w, consts.APP_VERSION, http.StatusOK)
 }
 
 func handleStatus(c web.C, w http.ResponseWriter, r *http.Request) {

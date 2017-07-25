@@ -9,6 +9,8 @@ import (
 
 	"./phpr/logger"
 	"./phpr/server"
+	"./phpr/consts"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/braintree/manners"
 	"github.com/codegangsta/cli"
@@ -27,7 +29,7 @@ func main() {
 
 	app.Name = "phpr"
 	app.Usage = "Photo proxy with resizing and watermarks"
-	app.Version = "0.2.1"
+	app.Version = consts.APP_VERSION
 	app.Author = "Igor Borodikhin"
 	app.Email = "iborodikhin@gmail.com"
 	app.Action = actionRun
