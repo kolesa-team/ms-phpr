@@ -13,13 +13,14 @@ dep-install:
 	go get github.com/codegangsta/cli
 	go get github.com/robfig/config
 	go get github.com/sevlyar/go-daemon
-	go get github.com/Sirupsen/logrus
+	go get github.com/sirupsen/logrus
 	go get github.com/zenazn/goji
 	go get github.com/zenazn/goji/web
 	go get github.com/endeveit/go-snippets/cli
 	go get github.com/endeveit/go-snippets/config
 	go get github.com/disintegration/imaging
 	go get github.com/gemnasium/logrus-graylog-hook
+	go get github.com/kolesa-team/go-monitoring-routes
 
 fmt:
 	gofmt -s=true -w $(CURDIR)/src

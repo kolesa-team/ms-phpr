@@ -15,9 +15,10 @@ import (
 	"../image"
 	"../logger"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/endeveit/go-snippets/cli"
 	"github.com/endeveit/go-snippets/config"
+	stdRoutes "github.com/kolesa-team/go-monitoring-routes"
+	log "github.com/sirupsen/logrus"
 	"github.com/zenazn/goji/web"
 	"github.com/zenazn/goji/web/middleware"
 )
@@ -96,11 +97,10 @@ func NewMux() *web.Mux {
 
 	m.Use(mwRecoverer)
 
-	m.Get("/_status", handleStatus)
-	m.Get("/_version", handleVersion)
+	stdRoutes.Router(m, consts.APP_VERSION, config.Instance(), logger.Instance(), getStatus)
 	m.Get(regexp.MustCompile(`^/(.*)$`), handleRequest)
 
-	// Считаем статистику за последние 5 минут
+	// Count stats for last N minutes
 	go func() {
 		for {
 			lock.Lock()
@@ -121,32 +121,28 @@ func NewMux() *web.Mux {
 	return m
 }
 
-func handleVersion(c web.C, w http.ResponseWriter, r *http.Request) {
-	http.Error(w, consts.APP_VERSION, http.StatusOK)
-}
-
-func handleStatus(c web.C, w http.ResponseWriter, r *http.Request) {
+func getStatus() map[string]interface{} {
 	var (
 		head, tail uint64
+		result     map[string]interface{} = make(map[string]interface{})
 	)
-
-	w.Header().Set("Content-Type", "text/plain")
 
 	lock.Lock()
 	for _, key := range statKeys {
-		w.Write([]byte(fmt.Sprintf("%s: %d\n", key, counters[key])))
+		result[key] = counters[key]
 	}
 	lock.Unlock()
-
-	w.Write([]byte("\r\n\r\n"))
 
 	lock.Lock()
 	for _, key := range statKeys {
 		head = queue[key][0]
 		tail = queue[key][len(queue[key])-1]
-		w.Write([]byte(fmt.Sprintf("%s_%ds: %d\n", key, statPeriod, tail-head)))
+
+		result[fmt.Sprintf("%s_%ds", key, statPeriod)] = tail - head
 	}
 	lock.Unlock()
+
+	return result
 }
 
 func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {

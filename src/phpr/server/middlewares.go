@@ -3,7 +3,7 @@ package server
 import (
 	"../logger"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/zenazn/goji/web"
 	"github.com/zenazn/goji/web/mutil"
 	"net/http"
@@ -29,7 +29,7 @@ func mwLogger(c *web.C, h http.Handler) http.Handler {
 			"request_url":   r.URL.String(),
 			"status":        lw.Status(),
 			"response_time": time.Now().Sub(ts).String(),
-		}).Info("Request processed")
+		}).Debug("Request processed")
 	}
 
 	return http.HandlerFunc(fn)

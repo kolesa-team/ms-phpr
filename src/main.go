@@ -11,7 +11,7 @@ import (
 	"./phpr/server"
 	"./phpr/consts"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/braintree/manners"
 	"github.com/codegangsta/cli"
 	hcli "github.com/endeveit/go-snippets/cli"

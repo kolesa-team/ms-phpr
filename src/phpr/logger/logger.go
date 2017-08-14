@@ -5,7 +5,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/Sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 	"github.com/endeveit/go-snippets/config"
 	"github.com/gemnasium/logrus-graylog-hook"
 )

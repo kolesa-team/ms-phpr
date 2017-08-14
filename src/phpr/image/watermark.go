@@ -9,7 +9,7 @@ import (
 
 	"../helper"
 	"../logger"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"github.com/disintegration/imaging"
 	"github.com/endeveit/go-snippets/config"
 )
