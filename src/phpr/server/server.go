@@ -97,7 +97,38 @@ func NewMux() *web.Mux {
 
 	m.Use(mwRecoverer)
 
-	stdRoutes.Router(m, consts.APP_VERSION, config.Instance(), logger.Instance(), getStatus)
+	r := stdRoutes.NewRouter()
+	r.Mux(m).
+		Config(config.Instance()).
+		Logger(logger.Instance()).
+		Version(consts.APP_VERSION).
+		StatusFunc(func() map[string]interface{} {
+			var (
+				head, tail uint64
+				result     map[string]interface{} = make(map[string]interface{})
+			)
+
+			lock.Lock()
+			for _, key := range statKeys {
+				result[key] = counters[key]
+			}
+			lock.Unlock()
+
+			lock.Lock()
+			for _, key := range statKeys {
+				head = queue[key][0]
+				tail = queue[key][len(queue[key])-1]
+
+				result[fmt.Sprintf("%s_%ds", key, statPeriod)] = tail - head
+			}
+			lock.Unlock()
+
+			return result
+		}).
+		HealthFunc(func() bool {
+			return true
+		})
+
 	m.Get(regexp.MustCompile(`^/(.*)$`), handleRequest)
 
 	// Count stats for last N minutes
@@ -119,30 +150,6 @@ func NewMux() *web.Mux {
 	}()
 
 	return m
-}
-
-func getStatus() map[string]interface{} {
-	var (
-		head, tail uint64
-		result     map[string]interface{} = make(map[string]interface{})
-	)
-
-	lock.Lock()
-	for _, key := range statKeys {
-		result[key] = counters[key]
-	}
-	lock.Unlock()
-
-	lock.Lock()
-	for _, key := range statKeys {
-		head = queue[key][0]
-		tail = queue[key][len(queue[key])-1]
-
-		result[fmt.Sprintf("%s_%ds", key, statPeriod)] = tail - head
-	}
-	lock.Unlock()
-
-	return result
 }
 
 func handleRequest(c web.C, w http.ResponseWriter, r *http.Request) {
